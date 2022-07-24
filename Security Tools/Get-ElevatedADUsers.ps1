@@ -51,4 +51,4 @@ Foreach($ProtectedUser in $ProtectedUsers){
     If (((Get-ADUser -Identity $ProtectedUser -Properties memberOf).memberOf) -like "*Replicator*"){
         Write-Host "$($ProtectedUser).samAccountName is a member of Replicator."
     }
-    }
+}
