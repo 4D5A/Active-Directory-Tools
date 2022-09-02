@@ -42,69 +42,157 @@ $DomainController = Get-ADDomainController | Select-Object -ExpandProperty HostN
 Foreach($ElevatedUser in $ElevatedUsers){
     $MembershipinElevatedGroups = @()
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Enterprise Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Enterprise Admins*"){
         $MembershipinElevatedGroups += "Enterprise Admins"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Schema Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Schema Admins*"){
         $MembershipinElevatedGroups += "Schema Admins"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Domain Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Domain Admins*"){
         $MembershipinElevatedGroups += "Domain Admins"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Administrators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Administrators*"){
         $MembershipinElevatedGroups += "Administrators"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Account Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Account Operators*"){
         $MembershipinElevatedGroups += "Account Operators"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Server Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
-        $MembershipinElevatedGroups += "ServerOperators"
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Server Operators*"){
+        $MembershipinElevatedGroups += "Server Operators"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Print Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Print Operators*"){
         $MembershipinElevatedGroups += "Print Operators"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Backup Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Backup Operators*"){
         $MembershipinElevatedGroups += "Backup Operators"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Cert Publishers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Cert Publishers*"){
         $MembershipinElevatedGroups += "Cert Publishers"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Domain Controllers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Domain Controllers*"){
         $MembershipinElevatedGroups += "Domain Controllers"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Read-Only Domain Controllers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Read-Only Domain Controllers*"){
         $MembershipinElevatedGroups += "Read-Only Domain Controllers"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Replicator").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Replicator*"){
         $MembershipinElevatedGroups += "Replicator"
     }
 
-    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Protected Users").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Protected Users*"){
         $MemberofProtectedUsersGroup = "yes"
+    }
+
+    $MembershipinElevatedNestedGroups = @()
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Enterprise Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Enterprise Admins"){
+            $MembershipinElevatedNestedGroups += "Enterprise Admins"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Schema Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Schema Admins"){
+            $MembershipinElevatedNestedGroups += "Schema Admins"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Domain Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Domain Admins"){
+            $MembershipinElevatedNestedGroups += "Domain Admins"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Administrators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Administrators"){
+            $MembershipinElevatedNestedGroups += "Administrators"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Account Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Account Operators"){
+            $MembershipinElevatedNestedGroups += "Account Operators"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Server Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Server Operators"){
+            $MembershipinElevatedNestedGroups += "Server Operators"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Print Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Print Operators"){
+            $MembershipinElevatedNestedGroups += "Print Operators"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Backup Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Backup Operators"){
+            $MembershipinElevatedNestedGroups += "Backup Operators"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Cert Publishers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Cert Publishers"){
+            $MembershipinElevatedNestedGroups += "Cert Publishers"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Domain Controllers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Domain Controllers"){
+            $MembershipinElevatedNestedGroups += "Domain Controllers"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Read-Only Domain Controllers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Read-Only Domain Controllers"){
+            $MembershipinElevatedNestedGroups += "Read-Only Domain Controllers"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Replicator").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Replicator"){
+            $MembershipinElevatedNestedGroups += "Replicator"
+        }
+    }
+
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Protected Users").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
+        If ($MembershipinElevatedGroups -notcontains "Protected Users"){
+            $MemberofProtectedUsersNestedGroup = "yes"
+        }
     }
 
     # Write the results to the host and a text file.
     If(-not $LookCool){
-        If($MembershipInElevatedGroups -ne $null){
-            "Report for ${ElevatedUser}:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+        If(($MembershipInElevatedGroups -ne $null) -or ($MembershipinElevatedNestedGroups -ne $null)){
+            "Report for ${ElevatedUser}:" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Cyan
             "$(($ElevatedUser).SamAccountName) currently has elevated privileges." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+            If($MembershipinElevatedGroups -ne $null){
+                "$(($ElevatedUser).SamAccountName) is a member of the following elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+                Foreach($Group in $MembershipinElevatedGroups){
+                    "$Group" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+                }
+            }
+            If($MembershipinElevatedNestedGroups -ne $null){
+                "$(($ElevatedUser).SamAccountName) is a member of the following nested elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+                Foreach($NestedGroup in $MembershipinElevatedNestedGroups){
+                    "$NestedGroup" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+                }
+            }
             If($MemberofProtecedUsersGroup = "no"){
                 "$(($ElevatedUser).SamAccountName) is not a member of the Protected Users group." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-            }
-            "$(($ElevatedUser).SamAccountName) is a member of the following elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
-            Foreach($Group in $MembershipinElevatedGroups){
-                "$Group" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
             }
         }
     } ElseIf ($LookCool){
@@ -114,7 +202,7 @@ Foreach($ElevatedUser in $ElevatedUsers){
         $adminCount = Get-ADUser -Identity $ElevatedUser -Property adminCount | Select-Object -ExpandProperty adminCount
         If(($adminCount -eq $null) -or ($adminCount -eq 0)){
             "$ElevatedUser has a null value for its adminCount value." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Green
-        } ElseIf(($adminCount -eq 1) -and ($adminCount -ne $null)){
+        } ElseIf(($adminCount -eq 1) -or ($adminCount -ne $null)){
             "$ElevatedUser has a non-zero adminCount value." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
             "$ElevatedUser has an adminCount value of $adminCount" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
             "Checking if the value of the enabled attribute of the Active Directory object..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
@@ -125,20 +213,27 @@ Foreach($ElevatedUser in $ElevatedUsers){
                 "$ElevatedUser is disabled" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Yellow 
             }
             "Checking if the user is a member of a privileged Active Directory group..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
-            If(-not $MembershipinElevatedGroups){
+            If((-not $MembershipinElevatedGroups) -and (-not $MembershipinElevatedNestedGroups)){
                 "$(($ElevatedUser).SamAccountName) is not a member of a privileged Active Directory group." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Green
-            }
-            If($MembershipInElevatedGroups -ne $null){
+            }ElseIf(($MembershipInElevatedGroups -ne $null) -or ($MembershipinElevatedNestedGroups -ne $null)){
                 "$(($ElevatedUser).SamAccountName) currently has elevated privileges." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-                "Checking if the user is a member of the Protected Users group..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
+                If($MembershipinElevatedGroups -ne $null){
+                    "$(($ElevatedUser).SamAccountName) is a member of the following elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+                    Foreach($Group in $MembershipinElevatedGroups){
+                        "$Group" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+                    }
+                }
+                If($MembershipinElevatedNestedGroups -ne $null){
+                    "$(($ElevatedUser).SamAccountName) is a member of the following nested elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+                    Foreach($NestedGroup in $MembershipinElevatedNestedGroups){
+                        "$NestedGroup" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+                    }
+                }
+            "Checking if the user is a member of the Protected Users group..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
                 If($MemberofProtecedUsersGroup = "no"){
                     "$(($ElevatedUser).SamAccountName) is not a member of the Protected Users group." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
                 }
-                "$(($ElevatedUser).SamAccountName) is a member of the following elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
-                Foreach($Group in $MembershipinElevatedGroups){
-                    "$Group" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-                }
-            }
+            } 
         }
         "----------------------------------------------------------------------------------------------" | Tee-Object -FilePath "$Filepath\$Filename" -Append
     }
