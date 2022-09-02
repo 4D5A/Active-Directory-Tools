@@ -12,9 +12,6 @@ Param(
 )
 
 Import-Module ActiveDirectory
-If($Full){
-    $ElevatedUsers = Get-ADUser -Filter {(adminCount -ne 0)}
-}
 If($IncludeDisabled){
     $ElevatedUsers = Get-ADUser -Filter {(adminCount -ne 0)}
 }
@@ -45,55 +42,55 @@ $DomainController = Get-ADDomainController | Select-Object -ExpandProperty HostN
 Foreach($ElevatedUser in $ElevatedUsers){
     $MembershipinElevatedGroups = @()
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Enterprise Admins*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Enterprise Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Enterprise Admins"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Schema Admins*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Schema Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Schema Admins"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Domain Admins*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Domain Admins").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Domain Admins"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Administrators*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Administrators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Administrators"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Account Operators*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Account Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Account Operators"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Server Operators*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Server Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "ServerOperators"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Print Operators*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Print Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Print Operators"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Backup Operators*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Backup Operators").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Backup Operators"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Cert Publishers*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Cert Publishers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Cert Publishers"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Domain Controllers*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Domain Controllers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Domain Controllers"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Read-Only Domain Controllers*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Read-Only Domain Controllers").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Read-Only Domain Controllers"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Replicator*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Replicator").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MembershipinElevatedGroups += "Replicator"
     }
 
-    If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Protected Users*"){
+    If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Protected Users").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
         $MemberofProtectedUsersGroup = "yes"
     }
 
