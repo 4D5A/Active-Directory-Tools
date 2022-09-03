@@ -1,12 +1,10 @@
 Param(
-    [Parameter(Mandatory=$False)]
-    [switch]$Full,
-    [Parameter(Mandatory=$False)]
-    [switch]$IncludeDisabled,
     [parameter(Mandatory=$False)]
     [String]$ReportLocation,
     [parameter(Mandatory=$False)]
     [String]$File,
+    [parameter(Mandatory=$False)]
+    [switch]$IncludeDisabled,
     [parameter(Mandatory=$False)]
     [switch]$LookCool
 )
