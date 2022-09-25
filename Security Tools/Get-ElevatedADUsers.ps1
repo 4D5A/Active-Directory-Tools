@@ -9,7 +9,13 @@ Param(
     [switch]$LookCool
 )
 
-Import-Module ActiveDirectory
+Import-Module -Name ActiveDirectory -ErrorAction:SilentlyContinue
+
+If (-Not (Get-Module -Name ActiveDirectory)) {
+    Add-WindowsCapability -Online -name "RSAT.ActiveDirectory.DS-LDS.Tools"
+    Import-Module -Name ActiveDirectory -ErrorAction:SilentlyContinue
+}
+
 If($IncludeDisabled){
     $ElevatedUsers = Get-ADUser -Filter {(adminCount -ne 0)}
 }
