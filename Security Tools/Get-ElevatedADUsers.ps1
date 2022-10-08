@@ -1,3 +1,43 @@
+<#
+    .Synopsis
+    Searches for AD User Accounts which may have at one point been granted elevated privileges.
+    
+    .Description
+    Searches for AD User Accounts which have a value for the Active Directory object attribute adminCount set,
+    for AD User Accounts that have a value set for the Active Directory object attribute adminAcount, this
+    script checks for direct and nested (indirect) membership in specific Active Directory Security Groups
+    that grant an AD User Account elevated privileges so Systems Administrators can review AD User Account
+    membership in the elevated security groups to determine if any AD User Accounts should be removed from
+    one or more elevated security groups. Results are sent to the console and to a text file.
+    
+    .Parameter ReportLocation
+    If this parameter is not specified, the value for $ReportLocation will be set to "$env:USERPROFILE\Desktop\".
+    
+    .Parameter File
+    If this paramter is not specified, the value for $File will be set to "Get-ElevatedADUsers_Report_$(Get-Date -Format ddMMyyyy_HHMMss).txt".
+
+    .Parameter IncludeDisabled
+    If this parameter is not specified the varaible $ElevatedUsers is set to "Get-ADUser -Filter {(Enabled -eq "true") -and (adminCount -ne 0)}".
+    If it is specified the variable $ElevatedUsers to "Get-ADUser -Filter {(adminCount -ne 0)}".
+    
+    .Parameter LookCool
+    I added this becase the switch -Verbose is reserved by PowerShell v2.
+    
+    .Example
+    Get-ElevatedADUsers.ps1
+    
+    .Example
+    Get-ElevatedADUsers.ps1 -ReportLocation C:\ -File get-elevatedadusers-results.txt
+    
+    .Example
+    Get-ElevatedADUsers.ps1 -IncludeDisabled
+
+    .Example
+    Get-ElevatedADUsers.ps1 -LookCool
+
+    .Example
+    Get-ElevatedADUsers.ps1 -ReportLocation C:\ -File get-elevatedadusers-results.txt -IncludeDisabled -LookCool
+#>
 Param(
     [parameter(Mandatory=$False)]
     [String]$ReportLocation,
