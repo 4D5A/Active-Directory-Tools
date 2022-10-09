@@ -3,12 +3,11 @@
     Searches for AD User Accounts which may have at one point been granted elevated privileges.
     
     .Description
-    Searches for AD User Accounts which have a value for the Active Directory object attribute adminCount set,
-    for AD User Accounts that have a value set for the Active Directory object attribute adminAcount, this
-    script checks for direct and nested (indirect) membership in specific Active Directory Security Groups
-    that grant an AD User Account elevated privileges so Systems Administrators can review AD User Account
-    membership in the elevated security groups to determine if any AD User Accounts should be removed from
-    one or more elevated security groups. Results are sent to the console and to a text file.
+    Searches for AD User Accounts which have a value for the Active Directory object attribute adminCount set, for AD User Accounts that have
+    a value set for the Active Directory object attribute adminAcount, this script checks for direct and nested (indirect) membership in
+    specific Active Directory Security Groups that grant an AD User Account elevated privileges so Systems Administrators can review AD User Account
+    membership in the elevated security groups to determine if any AD User Accounts should be removed from one or more elevated security groups.
+    Results are sent to the console and to a text file.
     
     .Parameter ReportLocation
     If this parameter is not specified, the value for $ReportLocation will be set to "$env:USERPROFILE\Desktop\".
@@ -20,24 +19,53 @@
     If this parameter is not specified the varaible $ElevatedUsers is set to "Get-ADUser -Filter {(Enabled -eq "true") -and (adminCount -ne 0)}".
     If it is specified the variable $ElevatedUsers to "Get-ADUser -Filter {(adminCount -ne 0)}".
     
-    .Parameter LookCool
-    I added this becase the switch -Verbose is reserved by PowerShell v2.
+    .Parameter Csv
+    If this parameter is specified, results are sent to the console and a csv file.
+    
+    .Parameter Details
+    If this parameter is not specified, the object's DistinguishedName, SamAccountName, AccountStatus, HasElevatedRights, and MemberofProtectedUsersGroup
+    properties are displayed in the console. If this parameter is specified, all of the object's properties are displayed in the console.
+    If the Csv parameter is specified, all of the object's properties are sent to the csv file.
     
     .Example
     Get-ElevatedADUsers.ps1
     
     .Example
-    Get-ElevatedADUsers.ps1 -ReportLocation C:\ -File get-elevatedadusers-results.txt
+    Get-ElevatedADUsers.ps1 -ReportLocation C:\ -File get-elevatedadusers-results.csv -Csv
     
     .Example
     Get-ElevatedADUsers.ps1 -IncludeDisabled
 
     .Example
-    Get-ElevatedADUsers.ps1 -LookCool
-
+    Get-ElevatedADUsers.ps1 -details
+    
     .Example
-    Get-ElevatedADUsers.ps1 -ReportLocation C:\ -File get-elevatedadusers-results.txt -IncludeDisabled -LookCool
+    Get-ElevatedADUsers.ps1 -ReportLocation C:\ -File get-elevatedadusers-results.csv -Csv -IncludeDisabled -Details
+
 #>
+
+#MIT License
+
+#Copyright (c) 2022 4D5A
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+
 Param(
     [parameter(Mandatory=$False)]
     [String]$ReportLocation,
@@ -46,7 +74,9 @@ Param(
     [parameter(Mandatory=$False)]
     [switch]$IncludeDisabled,
     [parameter(Mandatory=$False)]
-    [switch]$LookCool
+    [Switch]$Csv,
+    [parameter(Mandatory=$False)]
+    [Switch]$Details
 )
 
 Import-Module -Name ActiveDirectory -ErrorAction:SilentlyContinue
@@ -56,14 +86,14 @@ If (-Not (Get-Module -Name ActiveDirectory)) {
     Import-Module -Name ActiveDirectory -ErrorAction:SilentlyContinue
 }
 
+$global:Content = $null
+$global:Content = @()
+
 If($IncludeDisabled){
-    $ElevatedUsers = Get-ADUser -Filter {(adminCount -ne 0)}
-}
-If($LookCool){
     $ElevatedUsers = Get-ADUser -Filter *
 }
 Else{
-    $ElevatedUsers = Get-ADUser -Filter {(Enabled -eq "true") -and (adminCount -ne 0)}
+    $ElevatedUsers = Get-ADUser -Filter {(Enabled -eq "true")}
 }
 
 If(-not($ReportLocation)){
@@ -71,7 +101,7 @@ If(-not($ReportLocation)){
 }
 
 If(-not($File)){
-    $File = "Get-ElevatedADUsers_Report_$(Get-Date -Format ddMMyyyy_HHMMss).txt"
+    $File = "Get-ElevatedADUsers_Report_$(Get-Date -Format ddMMyyyy_HHMMss).csv"
 }
 
 $Filename = $File
@@ -79,11 +109,18 @@ $Filepath = $ReportLocation
 
 # Write information about the domain.
 $Domain = Get-ADDomain | Select-Object -ExpandProperty DNSRoot
-"The name of the domain is $Domain" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+Write-Host "The name of the domain is $Domain"
 $DomainController = Get-ADDomainController | Select-Object -ExpandProperty HostName
-"The name of the Domain Controller is $DomainController" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+Write-Host "The name of the Domain Controller is $DomainController"
 
 Foreach($ElevatedUser in $ElevatedUsers){
+
+    $adminCount = $null
+    $MembershipinElevatedGroups = $null
+    $MemberofProtectedUsersGroup = $null
+    $MemberofProtectedUsersNestedGroup = $null
+    $MembershipinElevatedNestedGroups = $null
+
     $MembershipinElevatedGroups = @()
 
     If (((Get-ADUser -Identity $ElevatedUser -Properties memberOf).memberOf) -like "*Enterprise Admins*"){
@@ -213,72 +250,40 @@ Foreach($ElevatedUser in $ElevatedUsers){
     }
 
     If (Get-ADUser -Filter "memberOf -RecursiveMatch '$((Get-ADGroup "Protected Users").DistinguishedName)'" -SearchBase ((Get-ADUser -Identity $ElevatedUser).DistinguishedName)){
-        If ($MembershipinElevatedGroups -notcontains "Protected Users"){
+        If ($MemberofProtectedUsersGroup -ne "yes"){
             $MemberofProtectedUsersNestedGroup = "yes"
         }
     }
+    
+    $adminCount = Get-ADUser -Identity $ElevatedUser -Property adminCount | Select-Object -ExpandProperty adminCount
+    $Enabled = Get-ADUser -Identity $ElevatedUser -Property Enabled | Select-Object -ExpandProperty Enabled
+        If ($Enabled -eq $True){
+            $AccountStatus = "Enabled"
+        } Else {
+            $AccountStatus = "Disabled"
+        }
 
-    # Write the results to the host and a text file.
-    If(-not $LookCool){
-        If(($MembershipInElevatedGroups -ne $null) -or ($MembershipinElevatedNestedGroups -ne $null)){
-            "Report for ${ElevatedUser}:" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Cyan
-            "$(($ElevatedUser).SamAccountName) currently has elevated privileges." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-            If($MembershipinElevatedGroups -ne $null){
-                "$(($ElevatedUser).SamAccountName) is a member of the following elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
-                Foreach($Group in $MembershipinElevatedGroups){
-                    "$Group" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-                }
-            }
-            If($MembershipinElevatedNestedGroups -ne $null){
-                "$(($ElevatedUser).SamAccountName) is a member of the following nested elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
-                Foreach($NestedGroup in $MembershipinElevatedNestedGroups){
-                    "$NestedGroup" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-                }
-            }
-            If($MemberofProtecedUsersGroup = "no"){
-                "$(($ElevatedUser).SamAccountName) is not a member of the Protected Users group." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-            }
-        }
-    } ElseIf ($LookCool){
-        "----------------------------------------------------------------------------------------------" | Tee-Object -FilePath "$Filepath\$Filename" -Append
-        "Report for ${ElevatedUser}:" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Cyan
-        "Checking the value of the adminCount attribute of the Active Directory object..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
-        $adminCount = Get-ADUser -Identity $ElevatedUser -Property adminCount | Select-Object -ExpandProperty adminCount
-        If(($adminCount -eq $null) -or ($adminCount -eq 0)){
-            "$ElevatedUser has a null value for its adminCount value." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Green
-        } ElseIf(($adminCount -eq 1) -or ($adminCount -ne $null)){
-            "$ElevatedUser has a non-zero adminCount value." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-            "$ElevatedUser has an adminCount value of $adminCount" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-            "Checking if the value of the enabled attribute of the Active Directory object..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
-            $enabled = Get-ADUser -Identity $ElevatedUser -Property Enabled | Select-Object -ExpandProperty Enabled
-            If($enabled -eq $True){
-                "$ElevatedUser is enabled" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Green
-            } ElseIf ($enabled -eq $False){
-                "$ElevatedUser is disabled" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Yellow 
-            }
-            "Checking if the user is a member of a privileged Active Directory group..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
-            If((-not $MembershipinElevatedGroups) -and (-not $MembershipinElevatedNestedGroups)){
-                "$(($ElevatedUser).SamAccountName) is not a member of a privileged Active Directory group." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Green
-            }ElseIf(($MembershipInElevatedGroups -ne $null) -or ($MembershipinElevatedNestedGroups -ne $null)){
-                "$(($ElevatedUser).SamAccountName) currently has elevated privileges." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-                If($MembershipinElevatedGroups -ne $null){
-                    "$(($ElevatedUser).SamAccountName) is a member of the following elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
-                    Foreach($Group in $MembershipinElevatedGroups){
-                        "$Group" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-                    }
-                }
-                If($MembershipinElevatedNestedGroups -ne $null){
-                    "$(($ElevatedUser).SamAccountName) is a member of the following nested elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
-                    Foreach($NestedGroup in $MembershipinElevatedNestedGroups){
-                        "$NestedGroup" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-                    }
-                }
-            "Checking if the user is a member of the Protected Users group..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
-                If($MemberofProtecedUsersGroup = "no"){
-                    "$(($ElevatedUser).SamAccountName) is not a member of the Protected Users group." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
-                }
-            } 
-        }
-        "----------------------------------------------------------------------------------------------" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+    $global:Content += [pscustomobject][ordered]@{
+        objectGUID = $($ElevatedUser).ObjectGUID;
+        DistinguishedName = $($ElevatedUser).DistinguishedName;
+        SamAccountName = $($ElevatedUser).SamAccountName;
+        adminCount = $adminCount;
+        AccountStatus = $AccountStatus
+        HasElevatedRights = If (($MembershipinElevatedGroups -ne $null) -or ($MembershipinElevatedNestedGroups -ne $null)) {"Yes"} Else { "No"};
+        MemberofProtectedUsersGroup = If ($MembershipinElevatedGroups -ne $null) {"Yes"} Else { "No"};
+        MemberofProtectedUsersNestedGroup = If ($MembershipinElevatedNestedGroups -ne $null) {"Yes"} Else { "No"};
+        MembershipinElevatedGroups = [System.String]::Join(", ", $MembershipinElevatedGroups);
+        MembershipinElevatedNestedGroups = [System.String]::Join(", ", $MembershipinElevatedNestedGroups);
     }
+}
+
+If ($Csv) {
+    $global:Content | Sort-Object HasElevatedRights -Descending | Export-Csv -Path "$FilePath\$Filename" -Append -Encoding Ascii -NoTypeInformation
+}
+
+If ($Details) {
+    $global:Content | Sort-Object HasElevatedRights -Descending | Format-Table
+}
+Else {
+    $global:Content | Select-Object DistinguishedName, SamAccountName, AccountStatus, HasElevatedRights | Sort-Object HasElevatedRights -Descending | Format-Table
 }
