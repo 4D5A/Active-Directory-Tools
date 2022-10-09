@@ -269,9 +269,9 @@ Foreach($ElevatedUser in $ElevatedUsers){
         SamAccountName = $($ElevatedUser).SamAccountName;
         adminCount = $adminCount;
         AccountStatus = $AccountStatus
-        HasElevatedRights = If (($MembershipinElevatedGroups -ne $null) -or ($MembershipinElevatedNestedGroups -ne $null)) {"Yes"} Else { "No"};
-        MemberofProtectedUsersGroup = If ($MembershipinElevatedGroups -ne $null) {"Yes"} Else { "No"};
-        MemberofProtectedUsersNestedGroup = If ($MembershipinElevatedNestedGroups -ne $null) {"Yes"} Else { "No"};
+        HasElevatedRights = If (($MembershipinElevatedGroups -ne $null) -or ($MembershipinElevatedNestedGroups -ne $null)) {"Yes"} Else {"No"};
+        MemberofProtectedUsersGroup = If ($MembershipinElevatedGroups -ne $null) {"Yes"} Else {"No"};
+        MemberofProtectedUsersNestedGroup = If ($MembershipinElevatedNestedGroups -ne $null) {"Yes"} Else {"No"};
         MembershipinElevatedGroups = [System.String]::Join(", ", $MembershipinElevatedGroups);
         MembershipinElevatedNestedGroups = [System.String]::Join(", ", $MembershipinElevatedNestedGroups);
     }
