@@ -77,6 +77,8 @@ Param(
     [Switch]$Csv,
     [parameter(Mandatory=$False)]
     [Switch]$Details
+    [parameter(Mandatory=$False)]
+    [switch]$LookCool
 )
 
 Import-Module -Name ActiveDirectory -ErrorAction:SilentlyContinue
@@ -284,6 +286,50 @@ If ($Csv) {
 If ($Details) {
     $global:Content | Sort-Object HasElevatedRights -Descending | Format-Table
 }
+
+If ($LookCool) {
+    "----------------------------------------------------------------------------------------------" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+    "Report for ${ElevatedUser}:" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Cyan
+    "Checking the value of the adminCount attribute of the Active Directory object..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
+    $adminCount = Get-ADUser -Identity $ElevatedUser -Property adminCount | Select-Object -ExpandProperty adminCount
+    If(($adminCount -eq $null) -or ($adminCount -eq 0)){
+        "$ElevatedUser has a null value for its adminCount value." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Green
+    } ElseIf(($adminCount -eq 1) -or ($adminCount -ne $null)){
+        "$ElevatedUser has a non-zero adminCount value." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+        "$ElevatedUser has an adminCount value of $adminCount" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+        "Checking if the value of the enabled attribute of the Active Directory object..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
+        $enabled = Get-ADUser -Identity $ElevatedUser -Property Enabled | Select-Object -ExpandProperty Enabled
+        If($enabled -eq $True){
+            "$ElevatedUser is enabled" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Green
+        } ElseIf ($enabled -eq $False){
+            "$ElevatedUser is disabled" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Yellow 
+        }
+        "Checking if the user is a member of a privileged Active Directory group..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
+        If((-not $MembershipinElevatedGroups) -and (-not $MembershipinElevatedNestedGroups)){
+            "$(($ElevatedUser).SamAccountName) is not a member of a privileged Active Directory group." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Green
+        }ElseIf(($MembershipInElevatedGroups -ne $null) -or ($MembershipinElevatedNestedGroups -ne $null)){
+            "$(($ElevatedUser).SamAccountName) currently has elevated privileges." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+            If($MembershipinElevatedGroups -ne $null){
+                "$(($ElevatedUser).SamAccountName) is a member of the following elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+                Foreach($Group in $MembershipinElevatedGroups){
+                    "$Group" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+                }
+            }
+            If($MembershipinElevatedNestedGroups -ne $null){
+                "$(($ElevatedUser).SamAccountName) is a member of the following nested elevated groups:" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+                Foreach($NestedGroup in $MembershipinElevatedNestedGroups){
+                    "$NestedGroup" | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+                }
+            }
+        "Checking if the user is a member of the Protected Users group..." | Tee-Object -FilePath "$Filepath\$Filename" -Append
+            If($MemberofProtecedUsersGroup = "no"){
+                "$(($ElevatedUser).SamAccountName) is not a member of the Protected Users group." | Tee-Object -FilePath "$Filepath\$Filename" -Append | Write-Host -ForegroundColor Red
+            }
+        } 
+    }
+    "----------------------------------------------------------------------------------------------" | Tee-Object -FilePath "$Filepath\$Filename" -Append
+}
+
 Else {
     $global:Content | Select-Object DistinguishedName, SamAccountName, AccountStatus, HasElevatedRights | Sort-Object HasElevatedRights -Descending | Format-Table
 }
