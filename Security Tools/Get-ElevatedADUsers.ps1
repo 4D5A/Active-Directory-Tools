@@ -72,13 +72,13 @@ Param(
     [parameter(Mandatory=$False)]
     [String]$File,
     [parameter(Mandatory=$False)]
-    [switch]$IncludeDisabled,
+    [Switch]$IncludeDisabled,
     [parameter(Mandatory=$False)]
     [Switch]$Csv,
     [parameter(Mandatory=$False)]
     [Switch]$Details
     [parameter(Mandatory=$False)]
-    [switch]$LookCool
+    [Switch]$LookCool
 )
 
 Import-Module -Name ActiveDirectory -ErrorAction:SilentlyContinue
